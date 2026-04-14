@@ -1,0 +1,98 @@
+--// LOAD
+repeat task.wait() until game:IsLoaded()
+
+--// SERVICES
+local VIM = game:GetService("VirtualInputManager")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+local LP = Players.LocalPlayer
+
+--// CONFIG
+local enabled = false
+
+--// GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
+
+local Button = Instance.new("TextButton")
+Button.Parent = ScreenGui
+Button.Size = UDim2.new(0, 140, 0, 45)
+Button.Position = UDim2.new(0.05, 0, 0.7, 0)
+Button.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Button.TextColor3 = Color3.fromRGB(255,255,255)
+Button.Text = "Auto Parry: OFF"
+Button.Font = Enum.Font.GothamBold
+Button.TextSize = 14
+
+-- borda bonita
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = Button
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = Color3.fromRGB(0, 170, 255)
+UIStroke.Thickness = 2
+UIStroke.Parent = Button
+
+-- arrastar (mobile)
+local dragging, dragInput, dragStart, startPos
+
+Button.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = Button.Position
+    end
+end)
+
+Button.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        Button.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+game:GetService("UserInputService").InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+-- toggle
+Button.MouseButton1Click:Connect(function()
+    enabled = not enabled
+
+    if enabled then
+        Button.Text = "Auto Parry: ON"
+        UIStroke.Color = Color3.fromRGB(0, 255, 0)
+    else
+        Button.Text = "Auto Parry: OFF"
+        UIStroke.Color = Color3.fromRGB(255, 0, 0)
+    end
+end)
+
+--// PARARRY
+local function parry()
+    VIM:SendMouseButtonEvent(0,0,0,true,game,0)
+    VIM:SendMouseButtonEvent(0,0,0,false,game,0)
+end
+
+--// LOOP
+RunService.Heartbeat:Connect(function()
+    if not enabled then return end
+
+    parry()
+    task.wait(0.01)
+end)
